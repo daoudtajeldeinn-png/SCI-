@@ -60,7 +60,12 @@ export const validateLicenseKey = (key: string | null): LicenseStatus => {
             throw new Error('Invalid salt');
         }
 
-        if (machineId !== currentMachineId && currentMachineId !== 'DEV-ENVIRONMENT-ID') {
+        // Validation logic:
+        // 1. If we are in the web browser (DEV-ENVIRONMENT-ID), we accept the key if the salt is valid.
+        // 2. If we are in Electron, the machine ID must match.
+        const isWebVersion = currentMachineId === 'DEV-ENVIRONMENT-ID';
+        
+        if (!isWebVersion && machineId !== currentMachineId) {
             return { isValid: false, expiryDate: null, daysRemaining: 0, message: 'License is locked to another device.' };
         }
 
