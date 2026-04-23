@@ -3,7 +3,6 @@ import { Shield, Lock, Eye, EyeOff, Key, Fingerprint, KeyRound, ShieldAlert, Cop
 import { useLicense } from './LicenseProvider';
 import { getMachineId } from '@/services/LicenseManager';
 import { toast } from 'sonner';
-import { checkPermission, type Module, type Action, type Role } from '../../lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,8 +13,9 @@ export interface User {
   id: string;
   username: string;
   name: string;
-  role: Role;
+  role: 'admin' | 'qc_manager' | 'manager' | 'analyst' | 'viewer';
   department: string;
+  permissions: string[];
   password?: string; // stored for mock auth, hashed in production
   lastLogin?: Date;
   sessionExpiry?: Date;
@@ -28,7 +28,6 @@ interface SecurityContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
-  can: (module: Module, action: Action) => boolean;
   checkSession: () => boolean;
   // User management
   allUsers: User[];
@@ -222,39 +221,9 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
   };
 
   const hasPermission = (permission: string): boolean => {
-    // Backward compatibility for old permission strings
     if (!user) return false;
-    if (user.role === 'admin') return true;
-    
-    // Map old permissions to new modules/actions if needed
-    const [mod, act] = permission.split('.');
-    if (mod && act) {
-      const moduleMap: Record<string, Module> = {
-        'products': 'INVENTORY',
-        'testing': 'TESTING',
-        'capa': 'CAPA',
-        'deviations': 'DEVIATION',
-        'reports': 'COA'
-      };
-      const actionMap: Record<string, Action> = {
-        'read': 'READ',
-        'write': 'UPDATE'
-      };
-      
-      const targetMod = moduleMap[mod];
-      const targetAct = actionMap[act];
-      
-      if (targetMod && targetAct) {
-        return checkPermission(user.role, targetMod, targetAct);
-      }
-    }
-    
-    return false;
-  };
-
-  const can = (module: Module, action: Action): boolean => {
-    if (!user) return false;
-    return checkPermission(user.role, module, action);
+    if (user.permissions.includes('*')) return true;
+    return user.permissions.includes(permission);
   };
 
   const checkSession = (): boolean => {
@@ -320,7 +289,6 @@ export function SecurityProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         hasPermission,
-        can,
         checkSession,
         allUsers,
         addUser,
@@ -582,14 +550,18 @@ export function LoginPage({ forcedLicenseLock = false }: { forcedLicenseLock?: b
                     placeholder="XXXX-XXXX-XXXX-XXXX"
                     className="bg-slate-950 border-white/10 h-14 text-sm font-mono uppercase text-white placeholder:text-slate-800 rounded-2xl focus:border-amber-500/50"
                     value={activationKey}
-                    onChange={(e) => setActivationKey(e.target.value)}
+                    onChange={(e) => {
+                      // Automatically format: uppercase and strip non-hex/non-dash characters for a clean input
+                      const val = e.target.value.toUpperCase().replace(/[^0-9A-F-]/g, '');
+                      setActivationKey(val);
+                    }}
                   />
                 </div>
                 <Button
                   className="w-full bg-amber-600 hover:bg-amber-500 h-14 font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-amber-900/20"
                   onClick={() => handleActivate()}
                 >
-                  Authorize System Access
+                  Confirm Activation
                 </Button>
 
                 <div className="mt-8 pt-8 border-t border-white/5">
@@ -630,30 +602,27 @@ export function LoginPage({ forcedLicenseLock = false }: { forcedLicenseLock?: b
   );
 }
 
-// ==================== RBAC Guard (Structural) ====================
-export function RBACGuard({
-  module,
-  action,
+// ==================== Permission Guard ====================
+export function PermissionGuard({
+  permission,
   children,
   fallback,
 }: {
-  module: Module;
-  action: Action;
+  permission: string;
   children: ReactNode;
   fallback?: ReactNode;
 }) {
-  const { can } = useSecurity();
+  const { hasPermission } = useSecurity();
 
-  if (!can(module, action)) {
-    return (fallback as React.ReactElement) || (
-      <div className="p-8 border border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center text-center bg-slate-50/50 grayscale opacity-60">
-        <ShieldAlert className="h-10 w-10 text-slate-300 mb-4" />
-        <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-1">Authorization Required</h3>
-        <p className="text-[10px] text-slate-500 font-medium max-w-[200px]">Your current credentials do not permit access to the {module} {action} interface.</p>
-      </div>
+  if (!hasPermission(permission)) {
+    return fallback || (
+      <Alert variant="destructive">
+        <AlertDescription>
+          Access Denied: You do not have sufficient privileges to access this module.
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return <>{children}</>;
 }
-
