@@ -551,9 +551,7 @@ export function LoginPage({ forcedLicenseLock = false }: { forcedLicenseLock?: b
                     className="bg-slate-950 border-white/10 h-14 text-sm font-mono uppercase text-white placeholder:text-slate-800 rounded-2xl focus:border-amber-500/50"
                     value={activationKey}
                     onChange={(e) => {
-                      // Automatically format: uppercase and strip non-hex/non-dash characters for a clean input
-                      const val = e.target.value.toUpperCase().replace(/[^0-9A-F-]/g, '');
-                      setActivationKey(val);
+                      setActivationKey(e.target.value);
                     }}
                   />
                 </div>
