@@ -36,3 +36,5 @@ yarn-error.log*
 
 # Workspace
 SCI-clone
+.vercel
+.env*.local
