@@ -1,7 +1,7 @@
 {
   "name": "pharmaqms-enterprise",
   "private": true,
-  "version": "4.0.5",
+  "version": "4.1.0",
   "description": "Enterprise Pharmaceutical Quality Management System",
   "author": "Dr. Daoud Tajeldeinn",
   "main": "main.cjs",
@@ -32,7 +32,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "public/icons/icon-512x512.png"
@@ -41,7 +43,15 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "shortcutName": "PharmaQMS Enterprise"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "daoudtajeldeinn-png",
+        "repo": "New-PharmaQMS-",
+        "private": false
+      }
+    ]
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -110,6 +120,7 @@
     "concurrently": "^8.2.2",
     "electron": "^28.2.2",
     "electron-builder": "^24.9.1",
+    "electron-updater": "^6.8.3",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",

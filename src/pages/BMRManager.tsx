@@ -474,7 +474,7 @@ const handleUpdateStep = (stepNumber: number, updates: StepUpdate) => {
                                     <div className="p-6 bg-slate-900 rounded-2xl flex justify-between items-center shadow-lg border border-slate-800">
                                         <div className="space-y-1">
                                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Processing Mass</p>
-                                            <div className="text-2xl font-black text-white">{masterFormulas[selectedBMR.mfrId]?.ingredients.reduce((acc, curr) => acc + curr.quantity, 0).toFixed(3) || '0.000'} <span className="text-xs text-slate-400 font-bold">Kg/L</span></div>
+                                            <div className="text-2xl font-black text-white">{(masterFormulas[selectedBMR.mfrId]?.ingredients || []).reduce((acc, curr) => acc + curr.quantity, 0).toFixed(3) || '0.000'} <span className="text-xs text-slate-400 font-bold">Kg/L</span></div>
                                         </div>
                                         <Button className="bg-indigo-600 hover:bg-indigo-500 h-12 px-10 font-bold uppercase text-xs tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-900/40">
                                             Authorize Phase Completion
@@ -484,7 +484,7 @@ const handleUpdateStep = (stepNumber: number, updates: StepUpdate) => {
 
                                 <TabsContent value="processing" className="space-y-4">
                                     {selectedBMR.stepExecutions.filter((s: BMRStepExecution) => s.phase === 'Manufacturing').map((step: BMRStepExecution, i: number) => {
-                                        const mfrStep = masterFormulas[selectedBMR.mfrId]?.processSteps.find(s => s.stepNumber === step.stepNumber);
+                                        const mfrStep = masterFormulas[selectedBMR.mfrId]?.processSteps?.find(s => s.stepNumber === step.stepNumber);
                                         return (
                                             <div key={i} className={`p-8 border-2 rounded-[32px] transition-all duration-500 ${step.status === 'Completed' ? 'bg-emerald-50/30 border-emerald-200' : step.status === 'In-Progress' ? 'bg-indigo-50/30 border-indigo-200 ring-4 ring-indigo-500/10' : 'bg-white border-slate-100 shadow-sm'}`}>
                                                 <div className="flex justify-between items-start mb-6">
@@ -527,11 +527,11 @@ const handleUpdateStep = (stepNumber: number, updates: StepUpdate) => {
                                                     <div className="space-y-3">
                                                         <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
                                                             <div className="text-[9px] font-bold text-amber-600 uppercase mb-2">Critical Process Parameters</div>
-                                                            <div className="flex gap-2 flex-wrap">
-                                                                {mfrStep?.criticalParameters.map((cp: string, cpi: number) => (
-                                                                    <span key={cpi} className="text-xs font-bold text-slate-700 bg-white border px-3 py-1 rounded-lg">● {cp}</span>
-                                                                ))}
-                                                            </div>
+                                                                <div className="flex gap-2 flex-wrap">
+                                                                    {(mfrStep?.criticalParameters || []).map((cp: string, cpi: number) => (
+                                                                        <span key={cpi} className="text-xs font-bold text-slate-700 bg-white border px-3 py-1 rounded-lg">● {cp}</span>
+                                                                    ))}
+                                                                </div>
                                                         </div>
                                                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                                             <div className="text-[9px] font-bold text-slate-500 uppercase mb-2">Observation / Value Log</div>
@@ -625,7 +625,7 @@ const handleUpdateStep = (stepNumber: number, updates: StepUpdate) => {
 
                                     {selectedBMR.stepExecutions.filter(s => s.phase === 'Packaging').length > 0 ? (
 selectedBMR.stepExecutions.filter((s: BMRStepExecution) => s.phase === 'Packaging').map((step: BMRStepExecution, i: number) => {
-                                            const mfrStep = masterFormulas[selectedBMR.mfrId]?.processSteps.find(s => s.stepNumber === step.stepNumber);
+                                            const mfrStep = masterFormulas[selectedBMR.mfrId]?.processSteps?.find(s => s.stepNumber === step.stepNumber);
                                             return (
                                                 <div key={i} className={`p-8 border-2 rounded-[32px] transition-all duration-500 ${step.status === 'Completed' ? 'bg-emerald-50/30 border-emerald-200' : step.status === 'In-Progress' ? 'bg-purple-50/30 border-purple-200 ring-4 ring-purple-500/10' : 'bg-white border-slate-100 shadow-sm'}`}>
                                                     <div className="flex justify-between items-start mb-6">
@@ -669,7 +669,7 @@ selectedBMR.stepExecutions.filter((s: BMRStepExecution) => s.phase === 'Packagin
                                                             <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
                                                                 <div className="text-[9px] font-bold text-amber-600 uppercase mb-2">Packaging Checks</div>
                                                                 <div className="flex gap-2 flex-wrap">
-                                                                    {mfrStep?.criticalParameters.map((cp: string, cpi: number) => (
+                                                                    {(mfrStep?.criticalParameters || []).map((cp: string, cpi: number) => (
                                                                         <span key={cpi} className="text-xs font-bold text-slate-700 bg-white border px-3 py-1 rounded-lg">● {cp}</span>
                                                                     ))}
                                                                 </div>
