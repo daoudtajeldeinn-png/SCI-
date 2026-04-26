@@ -26,7 +26,7 @@ export function BMRManagerPage() {
     const printRef = useRef<HTMLDivElement>(null);
 
     const handlePrint = useReactToPrint({
-        contentRef: printRef,
+        content: () => printRef.current,
         documentTitle: selectedBMR ? `BMR-${selectedBMR.batchNumber}` : 'BMR',
     });
     const [editingBMR, setEditingBMR] = useState<BatchRecord | null>(null);
@@ -1071,6 +1071,111 @@ selectedBMR.stepExecutions.filter((s: BMRStepExecution) => s.phase === 'Packagin
                     <DialogFooter><Button onClick={handleIssueBatch} className="bg-emerald-600 w-full font-bold h-12">Confirm Batch Issuance</Button></DialogFooter>
                 </DialogContent>
             </Dialog>
+            {/* Hidden Professional Printer Engine for BMR */}
+            {selectedBMR && (
+                <div style={{ position: 'absolute', left: '-9999px' }}>
+                    <div ref={printRef} className="p-12 bg-white text-black" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'serif' }}>
+                        <style>{`
+                            @media print { 
+                                @page { size: A4; margin: 10mm; } 
+                                .bmr-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                                .bmr-table th, .bmr-table td { border: 1px solid black; padding: 6px; text-align: left; font-size: 10pt; }
+                                .bmr-header { text-align: center; border-bottom: 3px double black; margin-bottom: 20px; padding-bottom: 10px; }
+                                .section-title { background: #f0f0f0; font-weight: bold; padding: 5px; border: 1px solid black; margin-top: 20px; margin-bottom: 10px; }
+                                .step-card { border: 1px solid black; padding: 10px; margin-bottom: 10px; page-break-inside: avoid; }
+                            }
+                        `}</style>
+                        <div className="bmr-header">
+                            <h1 className="text-3xl font-bold uppercase">Batch Manufacturing Record (BMR)</h1>
+                            <p className="text-sm font-bold mt-1">Quality Management System - Pharmaceutical Production</p>
+                        </div>
+
+                        <table className="bmr-table">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Product Name:</strong></td><td>{selectedBMR.productName}</td>
+                                    <td><strong>Batch Number:</strong></td><td>{selectedBMR.batchNumber}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Batch Size:</strong></td><td>{selectedBMR.batchSize} {selectedBMR.batchSizeUnit}</td>
+                                    <td><strong>Status:</strong></td><td>{selectedBMR.status}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Mfg Date:</strong></td><td>{selectedBMR.mfgDate}</td>
+                                    <td><strong>Expiry Date:</strong></td><td>{selectedBMR.expiryDate}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Issued By:</strong></td><td>{selectedBMR.issuedBy}</td>
+                                    <td><strong>Issuance Date:</strong></td><td>{selectedBMR.issuanceDate}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div className="section-title">BILL OF MATERIALS & DISPENSING</div>
+                        <table className="bmr-table">
+                            <thead>
+                                <tr>
+                                    <th>Item Code</th>
+                                    <th>Description</th>
+                                    <th>Standard Qty</th>
+                                    <th>Actual Qty</th>
+                                    <th>Verified By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(selectedBMR.ingredients || []).map((ing, i) => {
+                                    const verification = selectedBMR.materialVerifications?.find(v => v.itemCode === ing.itemCode);
+                                    return (
+                                        <tr key={i}>
+                                            <td>{ing.itemCode}</td>
+                                            <td>{ing.description}</td>
+                                            <td>{ing.standardQty} {ing.unit}</td>
+                                            <td>{verification?.actualQty || '___'} {ing.unit}</td>
+                                            <td>{verification?.verifiedBy || '___'}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+
+                        <div className="section-title">MANUFACTURING PROCESS LOG</div>
+                        {selectedBMR.stepExecutions.map((step, i) => (
+                            <div key={i} className="step-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <strong>Step {step.stepNumber}: {step.phase}</strong>
+                                    <span>Status: {step.status}</span>
+                                </div>
+                                <p style={{ fontSize: '10pt', margin: '5px 0' }}>{step.description}</p>
+                                <div style={{ fontSize: '9pt', marginTop: '5px', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                                    <div>Start: {step.startedAt || '___'}</div>
+                                    <div>End: {step.completedAt || '___'}</div>
+                                    <div>Operator: {step.operatorSignature || '___'}</div>
+                                    <div>Supervisor: {step.supervisorSignature || '___'}</div>
+                                </div>
+                                {step.realizedValue && (
+                                    <div style={{ marginTop: '5px', fontSize: '10pt' }}>
+                                        <strong>Observations/Values:</strong> {step.realizedValue}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        <div className="section-title">YIELD RECONCILIATION</div>
+                        <table className="bmr-table">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Theoretical Yield:</strong></td><td>100%</td>
+                                    <td><strong>Actual Yield:</strong></td><td>{selectedBMR.actualYield ? `${((selectedBMR.actualYield / selectedBMR.batchSize) * 100).toFixed(2)}%` : '___%'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Actual Quantity:</strong></td><td>{selectedBMR.actualYield || '___'} {selectedBMR.batchSizeUnit}</td>
+                                    <td><strong>Disposition:</strong></td><td>{selectedBMR.status === 'Released' ? 'APPROVED' : 'PENDING'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
