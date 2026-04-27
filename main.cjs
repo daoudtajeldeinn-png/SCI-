@@ -146,6 +146,23 @@ function createWindow() {
       autoUpdater.on('error', (err) => {
         console.error('Auto-updater error:', err.message);
       });
+
+      autoUpdater.on('update-not-available', () => {
+        // Only show if manually triggered or we want to be verbose
+        // For now, let's just log it or we could add a flag to show dialog
+      });
+
+      ipcMain.handle('check-for-updates', async () => {
+        if (autoUpdater) {
+          try {
+            const result = await autoUpdater.checkForUpdates();
+            return { success: true, info: result?.updateInfo };
+          } catch (error) {
+            return { success: false, error: error.message };
+          }
+        }
+        return { success: false, error: 'Auto-updater not initialized' };
+      });
     }
   }
 }
